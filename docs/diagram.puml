@@ -1,0 +1,147 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+hide empty members
+skinparam groupInheritance 2
+
+' Class relations
+Humidor -> IClimateRecorder
+Humidor --> IOT
+Humidor --> AbstractHumidorDatabaseLoader
+Humidor "1" *-- "0..*      " Tobacco
+AbstractHumidorDatabaseLoader <.. AbstractHumidorDatabaseLoader
+IOT <.. IOT
+
+Cigar "0..*" -> "1   " Shape : - shape
+Looseleaf "0..*" -> "   1" Cut : # cut
+Type "0..*" -> "   1" Tobacco : # type
+
+' Classes
+class Humidor {
+    - char * ssid
+    - char * password
+    - Tobacco * tobaccoCollection
+
+    + init()
+    + run()
+}
+
+interface IClimateRecorder <<interface>> {
+    + void getConditions(Humidor& humidor)
+}
+
+class DHTClimateRecorder implements IClimateRecorder
+
+class AirPollutantSensor implements IClimateRecorder {
+    + void getCO2()
+    + void getParticulateCount()
+}
+
+abstract class Sensor {
+    + String id
+}
+
+class TemperatureHumiditySensor extends Sensor {
+    + float readTemperature()
+    + float readHumidity()
+}
+
+class CO2Sensor extends Sensor {
+    + float readCO2()
+}
+
+class ParticulateMatterSensor extends Sensor {
+    + float readParticulateMatter()
+}
+
+class SensorGroup extends Sensor {
+    - List<Sensor> sensors
+    + void addSensor(Sensor sensor)
+    + void removeSensor(Sensor sensor)
+    + float readTemperature()
+    + float readHumidity()
+    + float readCO2()
+    + float readParticulateMatter()
+}
+
+class ClimateDataCollector {
+    + void collectData(Sensor sensor)
+}
+
+
+ClimateDataCollector o-- Sensor
+
+
+class IOT <<Singleton>> {
+    + bool connectToWiFi(char * ssid, char * password)
+    + void sendData()
+    + void sendAlert()
+}
+
+interface AbstractHumidorDatabaseLoader <<Singleton>> {
+    - database * database
+
+    + char& getSSID()
+    + char& getPassword()
+    + Tobacco& getTobacco(char * uuid)
+    + bool addTobacco(Tobacco& tobacco)
+    + bool loadTobacco(Tobacco& tobaccoCollection)
+}
+
+abstract class Tobacco <<abstract>> {
+    # char * uuid
+    # char * brand
+    # Datetime timeAdded
+    # int humidityLevel
+    # char * flavour
+    # char * notes
+
+    .. Getters ..
+    + char * getUUID()
+    + Type getType()
+    + char * getBrand()
+    + Datetime getTimeAdded()
+    + int gethumidityLevel()
+    + char * getFlavour()
+    + char * getNotes()
+    .. Setters ..
+    + void setBrand()
+    + void setTimeAdded()
+    + void setHumidityLevel()
+    + void setFlavour()
+    + void setNotes()
+}
+
+class Cigar extends Tobacco {
+    + Shape& getShape()
+    + void setShape(Shape shape)
+}
+
+class Cigarillo extends Tobacco
+
+abstract class Looseleaf <<abstract>> extends Tobacco
+
+class Rolling extends Looseleaf
+
+class Pipe extends Looseleaf
+
+enum Cut <<enumeration>>
+
+enum Shape <<enumeration>>
+
+enum Type <<enumeration>> {
+    CIGAR
+    PIPE_TOBACCO
+    ROLLING_TOBACCO
+    CIGARILLO
+}
+
+' Notes
+note \
+"Use Adafruit SCD-30 - NDIR CO2\nTemperature and Humidity Sensor maybe?\n\nhttps://www.adafruit.com/product/4867" \
+as ClimateNote
+
+' Note relations
+IClimateRecorder  .ClimateNote
+
+@enduml
